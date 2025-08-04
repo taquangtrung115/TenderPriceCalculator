@@ -1,0 +1,197 @@
+// ======================================
+// 📦 FULL JSON cấu hình Tender Rule Engine (Tree + UUID + Excel + SQL Mapping + ĐẦY ĐỦ TRƯỜNG HỢP THEO TÀI LIỆU)
+// ======================================
+// 📘 GIẢI THÍCH CẤU TRÚC:
+// TenderRulesTree: Cây logic các trường hợp xử lý theo cấp bậc (TH2 → TH2.1 → TH2.1.1,...)
+// - Id: UUID định danh cho mỗi rule (dùng để map sang action, config...)
+// - CaseCode: Mã tình huống (ví dụ "TH2.1.1")
+// - RuleName: Mô tả ngắn gọn tên tình huống
+// - Level: cấp độ trong cây (1: cấp cao nhất)
+// - MatchCondition: điều kiện để rule này áp dụng (đặt theo context hoặc item)
+// - ActionId: UUID của hành động xử lý (tham chiếu TenderRuleActions)
+// - AppliesToTypes: danh sách loại hàng áp dụng (VATTU, VTTH, HOACHAT...)
+// - IsActive: rule có được kích hoạt hay không
+// - Children: danh sách rule con cấp thấp hơn
+// - ParentId: Id của rule cha (nếu có) — không cần thiết trong JSON này vì đã có cấu trúc cây rõ ràng
+//
+// TenderRuleActions: Hành động xử lý được gọi khi một rule match
+// - ActionCode: mã ngắn gọn đại diện hành động
+// - HandlerName: tên hàm xử lý tương ứng trong backend
+// - Description: mô tả
+// - InputPriceSource: dùng cho hành động giữ nguyên giá — chỉ định giữ theo giá nào (KH, MIN, NY, TĐ)
+//
+// TenderRoundingConfig: Cấu hình làm tròn giá
+// - RuleId: liên kết với rule cụ thể
+// - RoundTo: làm tròn đến hàng đơn vị nào (vd 1000, 100...)
+// - Mode: cách làm tròn (NEAREST, UP, DOWN)
+// - ExcelFormula: công thức excel tương ứng nếu cần xuất
+{
+  "TenderRulesTree": {
+    "Id": "7b5b1740-b3e3-4967-9f3d-d8ac8b74a001",
+    "CaseCode": "TH2",
+    "RuleName": "TỔNG KH ≥ TỔNG MIN",
+    "Level": 1,
+    "MatchCondition": "context.Total_KH >= context.Total_MIN",
+    "ActionId": null,
+    "AppliesToTypes": null,
+    "IsActive": true,
+    "ParentId": null,
+    "Children": [
+      {
+        "Id": "a1c948db-dc97-4b59-95f6-b78a98e3fc11",
+        "CaseCode": "TH2.1",
+        "RuleName": "TỔNG MIN <= KH <= NY",
+        "Level": 2,
+        "MatchCondition": "context.Total_MIN <= context.Total_KH && context.Total_KH <= context.Total_NY",
+        "ActionId": null,
+        "AppliesToTypes": null,
+        "IsActive": true,
+        "ParentId": "7b5b1740-b3e3-4967-9f3d-d8ac8b74a001",
+        "Children": [
+          {
+            "Id": "f23532ea-193e-4c63-91bb-8892385a02df",
+            "CaseCode": "TH2.1.1",
+            "RuleName": "MIN < MAX",
+            "Level": 3,
+            "MatchCondition": "item.Price_MIN < item.Price_MAX",
+            "ActionId": "ac01",
+            "AppliesToTypes": null,
+            "IsActive": true,
+            "ParentId": "a1c948db-dc97-4b59-95f6-b78a98e3fc11",
+            "Children": []
+          },
+          {
+            "Id": "fb58f1a1-30bb-496e-94d2-c8cbac86bb42",
+            "CaseCode": "TH2.1.2",
+            "RuleName": "MIN ≥ MAX",
+            "Level": 3,
+            "MatchCondition": "item.Price_MIN >= item.Price_MAX",
+            "ActionId": "ac02",
+            "AppliesToTypes": null,
+            "ParentId": "a1c948db-dc97-4b59-95f6-b78a98e3fc11",
+            "IsActive": true,
+            "Children": []
+          }
+        ]
+      },
+      {
+        "Id": "0a21280f-2d00-4e88-9cf0-2e0b302f87bc",
+        "CaseCode": "TH2.2",
+        "RuleName": "TỔNG TĐ <= KH < MIN",
+        "Level": 2,
+        "MatchCondition": "context.Total_TD <= context.Total_KH && context.Total_KH < context.Total_MIN",
+        "ActionId": null,
+        "AppliesToTypes": null,
+        "IsActive": true,
+        "ParentId": "7b5b1740-b3e3-4967-9f3d-d8ac8b74a001",
+        "Children": [
+          {
+            "Id": "ce80fa33-ea79-4011-bf91-41e5b75f6e50",
+            "CaseCode": "TH2.2.A2.1",
+            "RuleName": "KH < MIN",
+            "Level": 3,
+            "MatchCondition": "item.Price_KH < item.Price_MIN",
+            "ActionId": "ac03",
+            "AppliesToTypes": [ "VTTH", "HOACHAT_CONTROL", "HOACHAT_CHINH" ],
+            "IsActive": true,
+            "ParentId": "ce80fa33-ea79-4011-bf91-41e5b75f6e50",
+            "Children": []
+          },
+          {
+            "Id": "baedbb36-6e4d-49d1-9a13-0f0143db100b",
+            "CaseCode": "TH2.2.A2.2",
+            "RuleName": "NY < KH",
+            "Level": 3,
+            "MatchCondition": "item.Price_NY < item.Price_KH",
+            "ActionId": "ac01",
+            "AppliesToTypes": [ "VTTH", "HOACHAT_CONTROL" ],
+            "IsActive": true,
+            "ParentId": "ce80fa33-ea79-4011-bf91-41e5b75f6e50",
+            "Children": []
+          },
+          {
+            "Id": "99dc5ee2-bd26-4b9e-b1f1-4e3a9d185978",
+            "CaseCode": "TH2.2.A2.3",
+            "RuleName": "MIN <= KH <= MAX",
+            "Level": 3,
+            "MatchCondition": "item.Price_MIN <= item.Price_KH && item.Price_KH <= item.Price_MAX",
+            "ActionId": "ac01",
+            "AppliesToTypes": null,
+            "IsActive": true,
+            "ParentId": "ce80fa33-ea79-4011-bf91-41e5b75f6e50",
+            "Children": []
+          },
+          {
+            "Id": "fda92fa1-3456-42e1-898f-e84b58cbdd01",
+            "CaseCode": "TH2.2.A2.4",
+            "RuleName": "MAX < KH <= NY",
+            "Level": 3,
+            "MatchCondition": "item.Price_MAX < item.Price_KH && item.Price_KH <= item.Price_NY",
+            "ActionId": "ac02",
+            "AppliesToTypes": null,
+            "IsActive": true,
+            "ParentId": "ce80fa33-ea79-4011-bf91-41e5b75f6e50",
+            "Children": []
+          }
+        ]
+      },
+      {
+        "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+        "CaseCode": "TH2.3",
+        "RuleName": "KH < TỔNG TĐ",
+        "Level": 2,
+        "MatchCondition": "context.Total_KH < context.Total_TD",
+        "ActionId": "ac04",
+        "AppliesToTypes": null,
+        "IsActive": true,
+        "ParentId": "7b5b1740-b3e3-4967-9f3d-d8ac8b74a001",
+        "Children": []
+      }
+    ]
+  },
+
+  "TenderRuleActions": [
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "ActionCode": "KEEP_INPUT_PRICE",
+      "HandlerName": "ApplyKeepInputPrice",
+      "Description": "Giữ nguyên giá đã chọn (KH/MIN/NY/TĐ)",
+      "InputPriceSource": "KH"
+    },
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "ActionCode": "SEQUENTIAL_REDUCE",
+      "HandlerName": "ApplySequentialReduction",
+      "Description": "Giảm giá lần lượt từng mặt hàng đến khi thỏa"
+    },
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "ActionCode": "SHOW_USER_CHOICE",
+      "HandlerName": "AskUserToSelectInputPrice",
+      "Description": "Yêu cầu người dùng chọn giá KH/MIN theo từng item"
+    },
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "ActionCode": "DISABLE_REDUCTION",
+      "HandlerName": "DisableReduction",
+      "Description": "Không áp dụng quy tắc giảm giá - giữ nguyên"
+    }
+  ],
+
+  "TenderRoundingConfig": [
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "RuleId": "f23532ea-193e-4c63-91bb-8892385a02df",
+      "RoundTo": 1000,
+      "Mode": "NEAREST",
+      "ExcelFormula": "=ROUND(A2, -3)"
+    },
+    {
+      "Id": "20e7c86c-f181-47e3-a987-1e6f3b6f7fc7",
+      "RuleId": "7b5b1740-b3e3-4967-9f3d-d8ac8b74a001",
+      "RoundTo": 1000,
+      "Mode": "NEAREST",
+      "ExcelFormula": "=MROUND(A2, 1000)"
+    }
+  ]
+}

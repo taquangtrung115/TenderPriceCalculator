@@ -18,12 +18,15 @@ namespace TenderPriceCalculator.Models
 
     public class Item
     {
+        public Guid Id { get; set; }
+        public Guid MatchedRuleId { get; set; }
         public string Name { get; set; } = string.Empty;
         public ItemType Type { get; set; }
         public decimal Price_MIN { get; set; }
         public decimal Price_MAX { get; set; }
         public decimal Price_TTTN { get; set; }
         public decimal Price_NY { get; set; }
+        public decimal Price_TD { get; set; }
         public decimal Price_KH { get; set; }
         public decimal PriceBeforeAdjust { get; set; }
         public decimal PriceAfterAdjust { get; set; }
@@ -43,6 +46,7 @@ namespace TenderPriceCalculator.Models
                 Price_MIN = this.Price_MIN,
                 Price_MAX = this.Price_MAX,
                 Price_TTTN = this.Price_TTTN,
+                Price_TD = this.Price_TD,
                 Price_NY = this.Price_NY,
                 PriceBeforeAdjust = this.PriceBeforeAdjust,
                 PriceAfterAdjust = this.PriceAfterAdjust,
